@@ -1,0 +1,1473 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>背包 · 一场社交</title>
+<meta name="description" content="一件关于社交焦虑与安全行为的交互作品：背着装满退路的包去一场社交。用它们，心跳立刻就慢下来；只是每用一次，你就离真实的连接远一点。">
+<meta property="og:title" content="背包 · 一场社交">
+<meta property="og:description" content="背着装满退路的包去一场社交。用它们，心跳立刻就慢下来；只是每用一次，你就离真实的连接远一点。">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0a080c">
+<style>
+:root{
+  --ink:#f4eee6;
+  --ink-dim:#b9ada0;
+  --ink-faint:#8b8078;
+  --bg:#0a080c;
+  --amber:#e8a44a;
+  --amber-soft:#f0c891;
+  --calm:#7fb6a8;
+  --anx:#e2574d;
+  --conn:#dcc586;
+  --line:rgba(244,238,230,.14);
+  --panel:rgba(14,11,15,.82);
+  --serif:"Songti SC","Noto Serif SC",Georgia,"Microsoft YaHei",serif;
+  --sans:"PingFang SC","HarmonyOS Sans SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:var(--sans);overflow:hidden}
+button{font-family:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+/* ---------- 舞台 ---------- */
+#stage{position:fixed;inset:0;overflow:hidden;background:#0a080c}
+#art{position:absolute;inset:0;width:100%;height:100%}
+#art svg{width:100%;height:100%;display:block;transform-origin:50% 42%;animation:breathe 9s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.014)}}
+
+.veil{position:absolute;inset:0;pointer-events:none}
+#vig{background:radial-gradient(ellipse 78% 70% at 50% 44%,rgba(0,0,0,0) var(--clear,60%),rgba(4,2,6,calc(.32 + var(--anx,0)*.5)) 100%)}
+#blurEdge{backdrop-filter:blur(calc(var(--anx,0)*7px));-webkit-backdrop-filter:blur(calc(var(--anx,0)*7px));
+  -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 44%,transparent var(--clear,60%),#000 100%);
+  mask-image:radial-gradient(ellipse 62% 58% at 50% 44%,transparent var(--clear,60%),#000 100%)}
+#tint{background:linear-gradient(180deg,rgba(6,4,8,calc(.28 + var(--anx,0)*.24)) 0%,rgba(6,4,8,0) 34%,rgba(6,4,8,calc(.42 + var(--anx,0)*.3)) 100%)}
+#sceneWrap.shake{animation:tremble .3s steps(2,end) infinite}
+@keyframes tremble{0%{transform:translate(0,0)}25%{transform:translate(-1.5px,1px)}50%{transform:translate(1.5px,-1px)}75%{transform:translate(-1px,-1px)}100%{transform:translate(1px,1px)}}
+@media (prefers-reduced-motion: reduce){#art svg{animation:none}#sceneWrap.shake{animation:none}}
+#sceneWrap{position:absolute;inset:0;transition:filter .5s ease}
+#grain{position:absolute;inset:0;opacity:.05;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='.7'/></svg>")}
+
+/* ---------- 脑内弹幕 ---------- */
+#thoughts{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.th{position:absolute;font-family:var(--serif);font-size:15px;color:rgba(240,222,208,.0);
+  white-space:nowrap;letter-spacing:.02em;transition:color .8s ease}
+
+/* ---------- HUD ---------- */
+.hud{position:fixed;left:0;right:0;top:0;padding:16px 20px;display:flex;justify-content:space-between;
+  align-items:flex-start;gap:16px;pointer-events:none;z-index:20}
+.hud .l{min-width:0}
+.act{font-size:11.5px;letter-spacing:.34em;color:var(--amber);text-transform:uppercase;margin-bottom:6px}
+.sceneName{font-family:var(--serif);font-size:20px;letter-spacing:.04em;text-shadow:0 2px 18px rgba(0,0,0,.85)}
+.sceneSub{font-size:12.5px;color:var(--ink-dim);margin-top:5px;text-shadow:0 2px 12px rgba(0,0,0,.9)}
+.meters{display:flex;gap:10px;align-items:center;pointer-events:auto}
+.m{display:flex;flex-direction:column;gap:5px;align-items:center;min-width:54px;
+  background:rgba(12,9,13,.5);border:1px solid var(--line);border-radius:11px;padding:7px 9px;backdrop-filter:blur(8px)}
+.m b{font-size:15px;font-variant-numeric:tabular-nums;font-weight:500;line-height:1}
+.m span{font-size:10px;letter-spacing:.16em;color:var(--ink-faint)}
+.m.anx b{color:var(--anx)}.m.con b{color:var(--conn)}.m.debt b{color:#c99a74}
+#curveBox{background:rgba(12,9,13,.5);border:1px solid var(--line);border-radius:11px;padding:6px 8px;backdrop-filter:blur(8px)}
+#curve{display:block;width:190px;height:44px}
+.curveCap{font-size:10px;letter-spacing:.14em;color:var(--ink-faint);text-align:right;margin-top:2px}
+
+/* ---------- 底部面板 ---------- */
+#panel{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:0 20px calc(20px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(8,6,10,0) 0%,rgba(8,6,10,.72) 26%,rgba(8,6,10,.94) 62%,rgba(8,6,10,.98) 100%);
+  pointer-events:none}
+.panelIn{max-width:1080px;margin:0 auto;padding-top:58px;pointer-events:auto}
+.bagRow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.bagLab{font-size:11px;letter-spacing:.2em;color:var(--ink-faint);margin-right:2px}
+.item{display:inline-flex;align-items:center;border:1px solid var(--line);background:rgba(236,228,216,.05);
+  border-radius:999px;overflow:hidden;transition:.2s}
+.item:hover{background:rgba(236,228,216,.11);border-color:rgba(244,238,230,.26)}
+.item .u{display:flex;align-items:center;gap:7px;padding:6px 5px 6px 12px;font-size:12.5px;color:var(--ink-dim);transition:.2s}
+.item:hover .u{color:var(--ink)}
+.item .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);opacity:.85;flex:none}
+.item .n{font-size:10.5px;color:var(--ink-faint);font-variant-numeric:tabular-nums}
+.item .x{padding:5px 9px 6px 8px;font-size:11px;color:rgba(185,173,160,.55);border-left:1px solid var(--line);transition:.2s}
+.item .x:hover{color:var(--anx);background:rgba(226,87,77,.12)}
+.item.used{opacity:.36;text-decoration:line-through}
+.item.used .x{opacity:.5}
+.hint{font-size:11.5px;color:var(--ink-faint);margin-left:auto}
+
+.narr{font-family:var(--serif);font-size:18.5px;line-height:2.05;letter-spacing:.015em;color:var(--ink);
+  max-width:840px;margin-bottom:6px;min-height:2.1em;text-shadow:0 2px 16px rgba(0,0,0,.9)}
+.narr em{font-style:normal;color:var(--amber-soft)}
+.sub{font-size:13.5px;line-height:1.95;color:var(--ink-dim);max-width:820px;margin-bottom:18px}
+.sub .r{color:var(--calm);font-style:normal}
+.opts{display:flex;flex-direction:column;gap:9px;max-width:880px}
+.opt{display:flex;gap:13px;align-items:flex-start;text-align:left;border:1px solid var(--line);
+  background:rgba(238,231,220,.045);border-radius:13px;padding:13px 16px;transition:.2s;position:relative;overflow:hidden}
+.opt:hover{background:rgba(238,231,220,.1);border-color:rgba(244,238,230,.3);transform:translateX(2px)}
+.opt .k{flex:none;width:22px;height:22px;border-radius:7px;display:grid;place-items:center;font-size:11.5px;
+  border:1px solid var(--line);color:var(--ink-faint);margin-top:1px}
+.opt .t{font-size:14.5px;line-height:1.62}
+.opt .tag{position:absolute;right:13px;top:13px;font-size:10.5px;letter-spacing:.12em;color:var(--ink-faint)}
+.opt.safety .k{color:var(--amber);border-color:rgba(232,164,74,.45)}
+.opt.expo .k{color:var(--calm);border-color:rgba(127,182,168,.5)}
+.opt.expo{background:rgba(127,182,168,.05)}
+.opt.wide{justify-content:center}
+.opt:disabled{opacity:.28;cursor:default;transform:none}
+.opt:disabled:hover{background:rgba(238,231,220,.045);border-color:var(--line)}
+.foot{display:flex;gap:16px;align-items:center;margin-top:15px;font-size:12px;color:var(--ink-faint)}
+.foot button{font-size:12px;color:var(--ink-faint);border-bottom:1px solid transparent;padding-bottom:1px;transition:.2s}
+.foot button:hover{color:var(--ink);border-color:var(--line)}
+.holdRing{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--calm)}
+.holdRing svg{width:22px;height:22px}
+.holdRing circle{fill:none;stroke-width:2.4;stroke-linecap:round}
+
+/* ---------- 全屏面板 ---------- */
+.screen{position:fixed;inset:0;z-index:60;display:none;overflow:auto;background:
+  radial-gradient(ellipse 90% 70% at 50% 8%,rgba(232,164,74,.1),transparent 60%),linear-gradient(180deg,#0b090d,#07060a)}
+.screen.on{display:block}
+.scIn{max-width:1000px;margin:0 auto;padding:54px 24px 70px}
+.ttl{font-family:var(--serif);font-size:44px;letter-spacing:.06em;line-height:1.15}
+.ttl small{display:block;font-size:13.5px;letter-spacing:.3em;color:var(--amber);font-family:var(--sans);margin-bottom:16px}
+.lede{font-family:var(--serif);font-size:16.5px;line-height:2.15;color:var(--ink-dim);max-width:660px;margin:22px 0 30px}
+.lede b{color:var(--ink);font-weight:400}
+.rule{border-top:1px solid var(--line);margin:30px 0}
+.kicker{font-size:11px;letter-spacing:.26em;color:var(--ink-faint);margin:34px 0 14px}
+.btn{display:inline-flex;align-items:center;gap:10px;background:var(--amber);color:#1a1206;font-size:14.5px;
+  font-weight:500;border-radius:999px;padding:13px 30px;transition:.2s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn.ghost{background:none;color:var(--ink-dim);border:1px solid var(--line)}
+.btn.ghost:hover{color:var(--ink);border-color:rgba(244,238,230,.35)}
+.btnRow{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(288px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:rgba(236,228,216,.035);
+  transition:.24s;text-align:left;display:block;width:100%}
+.card:hover{background:rgba(236,228,216,.085);border-color:rgba(244,238,230,.3);transform:translateY(-2px)}
+.cardArt{height:112px;position:relative;overflow:hidden}
+.cardArt svg{width:100%;height:100%;display:block}
+.cardBody{padding:14px 16px 16px}
+.cardBody h3{margin:0 0 6px;font-family:var(--serif);font-size:18px;font-weight:400;letter-spacing:.03em}
+.cardBody p{margin:0;font-size:12.5px;color:var(--ink-dim);line-height:1.75}
+.cardFoot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;font-size:11px;color:var(--ink-faint)}
+.pill{border:1px solid var(--line);border-radius:999px;padding:3px 9px;font-variant-numeric:tabular-nums}
+.pill.fresh{color:var(--calm);border-color:rgba(127,182,168,.4)}
+
+.goalPick{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.goal{border:1px solid var(--line);border-radius:13px;padding:13px 16px;font-size:13.5px;color:var(--ink-dim);
+  background:rgba(236,228,216,.03);cursor:pointer;transition:.2s;max-width:330px;text-align:left}
+.goal:hover{background:rgba(236,228,216,.08);color:var(--ink)}
+.goal.sel{border-color:var(--amber);color:var(--ink);background:rgba(232,164,74,.1)}
+.goal .gk{font-size:10px;letter-spacing:.18em;color:var(--ink-faint);display:block;margin-bottom:5px}
+
+.slider{width:100%;max-width:520px;margin:8px 0 4px}
+.slider input{width:100%;accent-color:var(--amber)}
+.sliderVal{font-size:26px;font-variant-numeric:tabular-nums;font-family:var(--serif);color:var(--amber-soft)}
+
+.statGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.stat{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:rgba(236,228,216,.035)}
+.stat b{display:block;font-size:26px;font-family:var(--serif);font-weight:400;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat span{font-size:11.5px;color:var(--ink-faint);letter-spacing:.08em}
+.rate{font-family:var(--serif);font-size:78px;line-height:1;color:var(--amber);letter-spacing:.02em}
+.judge{font-family:var(--serif);font-size:17px;line-height:2;color:var(--ink);max-width:720px;margin:18px 0 0}
+.judge i{font-style:normal;color:var(--amber-soft)}
+.barRow{display:grid;grid-template-columns:104px 1fr 52px;gap:12px;align-items:center;font-size:12.5px;color:var(--ink-dim);margin-bottom:9px}
+.barTrack{height:8px;border-radius:99px;background:rgba(236,228,216,.09);overflow:hidden}
+.barFill{height:100%;border-radius:99px}
+.barVal{text-align:right;font-variant-numeric:tabular-nums;color:var(--ink)}
+.logList{font-size:13.5px;line-height:2.1;color:var(--ink-dim);max-width:720px}
+.logList s{color:var(--ink-faint);text-decoration-color:rgba(232,164,74,.6)}
+.logList b{font-weight:400;color:var(--ink)}
+.sceneHist{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px}
+.histCard{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:rgba(236,228,216,.03)}
+.histCard h4{margin:0 0 4px;font-size:14px;font-weight:400;font-family:var(--serif)}
+.histCard .meta{font-size:11.5px;color:var(--ink-faint);margin-bottom:9px}
+.disclaimer{font-size:12px;color:var(--ink-faint);line-height:1.95;max-width:640px;margin-top:26px;
+  border-left:2px solid rgba(232,164,74,.5);padding-left:14px}
+pre#selftest{position:fixed;left:0;top:0;z-index:999;background:#000;color:#0f0;font-size:11px;
+  max-height:100%;overflow:auto;display:none;white-space:pre-wrap;padding:10px}
+@media (max-width:720px){
+  .ttl{font-size:32px}.narr{font-size:16.5px;line-height:1.95}.opt .t{font-size:13.5px}
+  #curve{width:120px}#curveBox{display:none}.meters .m{min-width:46px;padding:6px 7px}
+  .m b{font-size:13px}.scIn{padding:38px 18px 60px}.hud{padding:12px 14px}
+  #panel{padding:0 14px calc(14px + env(safe-area-inset-bottom))}.panelIn{padding-top:40px}
+  .rate{font-size:60px}.judge{font-size:15.5px}
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="sceneWrap">
+    <div id="art"></div>
+  </div>
+  <div class="veil" id="tint"></div>
+  <div class="veil" id="blurEdge"></div>
+  <div class="veil" id="vig"></div>
+  <div id="grain"></div>
+  <div id="thoughts"></div>
+</div>
+
+<div class="hud">
+  <div class="l">
+    <div class="act" id="actLab">准备</div>
+    <div class="sceneName" id="sceneName">背包</div>
+    <div class="sceneSub" id="sceneSub"></div>
+  </div>
+  <div class="meters">
+    <div id="curveBox">
+      <svg id="curve" viewBox="0 0 190 44" preserveAspectRatio="none" aria-label="本次的焦虑曲线"></svg>
+      <div class="curveCap">焦虑曲线</div>
+    </div>
+    <div class="m anx"><b id="mAnx">50</b><span>焦虑</span></div>
+    <div class="m con"><b id="mCon">0</b><span>连接</span></div>
+    <div class="m debt"><b id="mDebt">0</b><span>负债</span></div>
+  </div>
+</div>
+
+<div id="panel">
+  <div class="panelIn">
+    <div class="bagRow" id="bagRow"></div>
+    <div class="narr" id="narr"></div>
+    <div class="sub" id="react"></div>
+    <div class="opts" id="opts"></div>
+    <div class="foot" id="foot"></div>
+  </div>
+</div>
+
+<div class="screen" id="sTitle">
+  <div class="scIn">
+    <div class="ttl"><small>一场社交 · 交互作品</small>背 包</div>
+    <div class="lede">
+      你要去一个场合，见一些不太熟的人。<br>
+      出门前，你会往包里装几样东西：手机、水杯、准备好的话题、一个熟人。<br><br>
+      它们很有用。用一下，心跳就慢下来。<br>
+      <b>只是每用一次，你就离真实的连接远一点。</b>
+    </div>
+    <div class="btnRow">
+      <button class="btn" id="btnStart">出门</button>
+      <button class="btn ghost" id="btnGrowth0">我的练习记录</button>
+    </div>
+    <div class="disclaimer">
+      这是一件课程作品，用来演示社交焦虑中「安全行为」的运作方式，不是诊断工具，也不是治疗方案。
+      游戏里的一切都可以随时退出，退出不扣分。如果你在现实中正被这类困扰影响，请找专业的心理工作者聊聊。
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sSelect">
+  <div class="scIn">
+    <div class="ttl"><small>第一步</small>今天去哪儿</div>
+    <div class="lede">同一个场合，去得越多，它就越普通。这是这个作品里唯一需要你长期做的事。</div>
+    <div class="cards" id="sceneCards"></div>
+    <div class="rule"></div>
+    <div class="btnRow">
+      <button class="btn ghost" id="btnGrowth1">练习记录</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sSetup">
+  <div class="scIn">
+    <div class="ttl"><small id="setupKicker">出门前</small><span id="setupName">今晚的场合</span></div>
+    <div class="lede" id="setupIntro"></div>
+
+    <div class="kicker">包里装什么</div>
+    <div class="lede" style="margin:0 0 12px;font-size:14.5px">
+      有些是明摆着的回避，有些看起来更像好习惯。点一下就能把它放进门口的箱子里——放下的那一下会更难受，
+      但连接值上限会提高，而且它会永久降低你对这个场合的敏感度。
+    </div>
+    <div class="cards" id="packCards" style="grid-template-columns:repeat(auto-fill,minmax(230px,1fr))"></div>
+
+    <div class="kicker">这次的三个目标</div>
+    <div class="lede" style="margin:0 0 10px;font-size:14.5px">
+      目标都是能看见的行为，没有一条是「别紧张」。选三个。
+    </div>
+    <div class="goalPick" id="goalPick"></div>
+
+    <div class="kicker">进门之前，你猜一下</div>
+    <div class="lede" style="margin:0 0 6px;font-size:14.5px">你觉得这次会有多尴尬？凭直觉给个分。等回来时我们再对一下。</div>
+    <div class="slider">
+      <input type="range" id="predSlider" min="0" max="100" step="5" value="60">
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-faint)">
+        <span>完全没事</span><span class="sliderVal" id="predVal">60</span><span>尴尬到想消失</span>
+      </div>
+    </div>
+
+    <div class="rule"></div>
+    <div class="btnRow">
+      <button class="btn" id="btnGo">推门进去</button>
+      <span class="hint" id="setupHint"></span>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sSummary">
+  <div class="scIn" id="summaryIn"></div>
+</div>
+
+<div class="screen" id="sGrowth">
+  <div class="scIn" id="growthIn"></div>
+</div>
+
+<pre id="selftest"></pre>
+
+<script>
+/* =========================================================================
+   《背包》—— 一件关于社交焦虑中「安全行为」的交互作品
+   全程离线可玩：内置一个本地叙事生成器（模板 + 状态 + 加权重采样）。
+   如果你想让 AI 现场写场景和台词，见文件末尾 CONFIG.llm 的接口说明。
+   ========================================================================= */
+
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const pick = a => a[Math.floor(Math.random() * a.length)];
+const rint = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+const shuffle = a => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+const someOf = (a, n) => shuffle(a).slice(0, n);
+
+const CONFIG = {
+  /* 想让真 AI 现场生成台词？把 enabled 改成 true，填上你的接口即可。
+     连不上或报错时会自动退回内置生成器，游戏不会中断。 */
+  llm: { enabled: false, endpoint: '', model: '', apiKey: '' }
+};
+
+/* 运行时错误会静静记在这块隐藏区域里（正常玩的时候看不见） */
+window.addEventListener('error', function (e) {
+  const pre = document.getElementById('selftest');
+  if (pre) pre.textContent += '\n[ERROR] ' + e.message + ' @line ' + (e.lineno || '?');
+});
+
+/* ============================ 场合 ============================ */
+const SCENES = [
+  { id:'birthday', name:'朋友的生日聚会', sub:'客厅里大概十五个人', hue:20, crowd:15,
+    familiar:0.2, diff:1.05, props:'living',
+    intro:'是大学同学叫你来他家吃蛋糕。你认识主人，也认识一两个同学，剩下的人只在朋友圈里见过名字。' },
+  { id:'lunch', name:'部门同事的午餐', sub:'圆桌，八个人', hue:34, crowd:8,
+    familiar:0.45, diff:1.0, props:'table',
+    intro:'新公司两个月，同事的名字勉强都记得。中午被叫上一起吃饭，坐下的顺序就决定了你要跟谁说话。' },
+  { id:'seminar', name:'小组作业讨论', sub:'教室，五个人', hue:200, crowd:5,
+    familiar:0.6, diff:0.95, props:'desk',
+    intro:'四人的小组，你只跟其中一个人说过话。今天是第一次线下碰面，要当场分工。' },
+  { id:'wedding', name:'表姐的婚礼', sub:'宴会厅，几十桌', hue:8, crowd:26,
+    familiar:0.12, diff:1.25, props:'hall',
+    intro:'你被安排在「年轻亲戚那桌」。桌上坐着一圈你叫不出称谓的人，他们好像彼此都很熟。' },
+  { id:'house', name:'邻居的暖房会', sub:'小公寓，人不多', hue:150, crowd:7,
+    familiar:0.1, diff:1.1, props:'living',
+    intro:'楼下邻居搬来新家，楼道里贴了张纸，说周末欢迎来坐坐。你出于礼貌去了，发现全是陌生面孔。' },
+  { id:'boardgame', name:'同学组织的桌游局', sub:'热闹，分成好几桌', hue:265, crowd:12,
+    familiar:0.3, diff:1.1, props:'living',
+    intro:'有人拉了个群，说周日开桌游。你到的时候已经开了两桌，只剩一个空椅子，椅子旁边全是不认识的人。' }
+];
+
+/* ============================ 包里的东西 ============================ */
+/* fake=true 的伪装成好习惯，这是这件作品最想让人看见的一层 */
+const ITEMS = [
+  { id:'phone',  name:'手机',       fake:false, uses:3, anx:14, con:9,  debt:8,
+    use:'低头刷两下手机，屏幕的光把脸照亮。', after:'你顺利地把注意力挪开了，也顺利地从这段对话里消失了。' },
+  { id:'water',  name:'水杯',       fake:false, uses:3, anx:11, con:7,  debt:7,
+    use:'喝一口水，让手上有件事做。', after:'喉咙动了动，可杯子空了之后手还是没地方放。' },
+  { id:'cup',    name:'抓紧的杯子', fake:false, uses:3, anx:9,  con:5,  debt:5,
+    use:'把杯子握紧一点，指尖找到一点支撑。', after:'杯子被你攥出了温度，肩膀也跟着绷住了。' },
+  { id:'balcony',name:'阳台',       fake:false, uses:2, anx:20, con:14, debt:13,
+    use:'往阳台走，推开门，外面的冷空气一下子清醒。', after:'你在阳台上待了七分钟。回去的时候那圈人已经换了话题。' },
+  { id:'script', name:'背好的台词', fake:false, uses:3, anx:13, con:8,  debt:8,
+    use:'在心里把准备好的那句话又默念一遍。', after:'念完了。下一句没有准备。' },
+  { id:'corner', name:'墙边的位置', fake:false, uses:4, anx:11, con:7,  debt:6,
+    use:'往后站半步，背靠上墙。', after:'墙很结实。没有人会走过来跟你说话。' },
+  { id:'early',  name:'提前到，先找熟人', fake:true, uses:2, anx:12, con:8, debt:7,
+    use:'绕到厨房去找那个认识的人，先在 TA 旁边站着。', after:'你在熟人身后的那半小时，过得很安全，也很安静。' },
+  { id:'help',   name:'帮忙递东西', fake:true, uses:3, anx:13, con:9,  debt:7,
+    use:'走向料理台，问要不要帮忙。', after:'手上忙起来，就不用说话了。这个理由非常正当。' },
+  { id:'smile',  name:'微笑点头', fake:true, uses:4, anx:9,  con:10, debt:6,
+    use:'保持微笑，在对方说完的时候点头。', after:'你看起来是这场谈话里最友善的人，也是最没有一个字的人。' },
+  { id:'askback',name:'只问对方问题', fake:true, uses:3, anx:11, con:8,  debt:6,
+    use:'把问题抛回去：你呢，你最近怎么样？', after:'对话很顺畅。谈了三十分钟，没有一句是关于你的。' },
+  { id:'wingman',name:'一起去的熟人', fake:true, uses:2, anx:15, con:11, debt:9,
+    use:'用余光确认跟你一起来的那个人还在视线里。', after:'像一根安全绳。你一次也没走到绳子的长度之外。' },
+  { id:'bydoor', name:'靠门的座位', fake:true, uses:3, anx:9,  con:6,  debt:5,
+    use:'挑一张离门口最近的椅子坐下。', after:'你一直知道自己能在三秒内走出去。这让你放松，也让你一直没进来。' }
+];
+
+/* ============================ 在场的人 ============================ */
+const TRAITS = [
+  { id:'warm', name:'热情的', safe:'旁边的人等了半秒，把话头转向了别人。', neu:'TA 笑着接住了：我也是刚到，谁都不太认识。', exp:'TA 眼睛亮了一下：太好了，终于有人认真说话了。' },
+  { id:'distracted', name:'心不在焉的', safe:'TA 的目光已经飘到窗外去了。', neu:'TA 嗯了一声，掏出手机看了一眼。', exp:'TA 愣了一下，然后转过来，真的看着你。' },
+  { id:'chatty', name:'话很多的', safe:'TA 顺势把话题接过去，自己讲了三分钟。', neu:'TA 连连点头，一口气回了你十句。', exp:'TA 反而停下来，等你说完。' },
+  { id:'shy', name:'安静的', safe:'TA 好像也松了一口气。', neu:'TA 小声应了一句，声音比你还轻。', exp:'TA 笑了一下，第二句话就自然多了。' },
+  { id:'pointed', name:'话里有话的', safe:'TA 若有所思地看了你一眼，什么也没说。', neu:'TA 说：你话挺少啊。', exp:'TA 挑了挑眉，然后真的跟你聊起来了。' }
+];
+
+/* ============================ 脑内弹幕 ============================ */
+const THOUGHTS = [
+  '他们在看我', '我脸是不是红了', '刚才那句说错了', '我声音在抖', '我该说点什么',
+  '好尴尬', '他们其实不想跟我说话', '我站在这儿干嘛', '快点结束吧',
+  '我看起来一定很奇怪', 'TA 刚才那个眼神是什么意思', '我果然不适合这种场合',
+  '我手该放哪儿', '他们刚才是不是在对视一下', '我笑得是不是很假'
+];
+
+/* ============================ 目标 ============================ */
+const GOALS = [
+  { id:'g_talk2', k:'参与', text:'和至少两个不同的人说上话',           check:s => s.spoken.size >= 2 },
+  { id:'g_say3',  k:'表达', text:'说满三句自己的话（不只是在附和）',   check:s => s.ownWords >= 3 },
+  { id:'g_truth', k:'表达', text:'说出一句和你真实想法一致的话',       check:s => s.exposures >= 1 },
+  { id:'g_init',  k:'表达', text:'自己起一个话题，不等别人问你',       check:s => s.initiated >= 1 },
+  { id:'g_phone', k:'自我', text:'全程没有掏出手机',                   check:s => !s.used.has('phone') },
+  { id:'g_stay',  k:'自我', text:'最难受的那一刻，没有离开这个房间',   check:s => !s.left },
+  { id:'g_drop2', k:'自我', text:'至少放下三件东西',                   check:s => s.dropped.length >= 3 },
+  { id:'g_name',  k:'关系', text:'问到一个陌生人的名字',               check:s => s.remembered },
+  { id:'g_alone', k:'关系', text:'有一次是单独跟一个人说话',           check:s => s.alone },
+  { id:'g_laugh', k:'关系', text:'让一个人真的笑出声',                 check:s => s.connection >= 36 }
+];
+
+/* ============================ 场景节点 ============================ */
+const NODES = {
+  act1: [
+    { id:'door', text:[
+        '门一推开，暖气、笑声和音乐一起涌出来。你还没换完鞋，就已经听见里面有三四个声音在同时说话。',
+        '楼道很安静，门里是另一个世界。你站在门口，手还搭在把手上，听见有人在里面喊了一声「来了来了」。',
+        '门口堆着一排鞋，大小不一。你低头解鞋带的时候，客厅里的话音忽然有一瞬间停了一下。'],
+      neu:'换好鞋，走进去，找了个不太靠中间的位置站着。',
+      expo:'先开口，对门口最近的人说：嗨，我是被叫来的，你们玩得挺热闹啊。' },
+    { id:'spot', text:[
+        '客厅不大，沙发坐满了，地上还铺着一圈坐垫。所有人看起来都已经找到自己的位置了。',
+        '你端着杯子在房间里绕了半圈，发现自己一直在绕——从厨房到阳台，再从阳台回到厨房。',
+        '有几个人围在餐桌旁边，有几个人窝在沙发上。中间那一块空地，好像只有你站在那儿。'],
+      neu:'在沙发扶手边找了个不碍事的地方坐下。',
+      expo:'走到沙发那片人中间，问：这儿有人吗？我能坐这儿吗？' },
+    { id:'greet', text:[
+        '一个人抬头看见了你，朝你点了点头。TA 的名字你好像在群里见过，但想不起来了。',
+        '有人端着杯子从你身边经过，停了一下：「哎，你是……跟谁一起来的？」',
+        '一个女生冲你笑了笑，说「你终于来了」，然后愣了一下——她可能认错人了，也可能没有。'],
+      neu:'点头笑了一下，说了句「嗯，刚到」。',
+      expo:'嗨，我是小林的同学。我好像记不住你叫什么，你再说一遍？',
+      tag:'name' },
+    { id:'coat', text:[
+        '你的外套还搭在手臂上，包也没放下。站在门口拿着这些东西的人，看起来随时准备走。',
+        '手里的袋子有点勒。你要么放下它，要么这一整晚都得拿着。'],
+      neu:'把外套搭在沙发背上，包塞在脚边。',
+      expo:'问旁边的人：外套放哪儿比较合适？——顺便跟 TA 说了两句话。' }
+  ],
+  act2: [
+    { id:'circle', text:[
+        '三四个人围成一个小圈，正聊着某个你完全不知道的人和事。圈子合得很紧，没有人看你。',
+        '你站在圈子外面，能听见每一个字，但插不进任何一个句子的空隙。',
+        '他们在笑。你不知道在笑什么，但你也跟着笑了一下——笑到一半发现有点不对。'],
+      neu:'站在圈子外沿听着，偶尔跟着笑一下。',
+      expo:'等一个空隙，插进去：抱歉打断一下，你们刚说的那个是什么事？',
+      tag:'init' },
+    { id:'silence', text:[
+        '有人说完一句，没人接。空气安静了两秒。有人低头看杯子，有人看手机。',
+        '一个话题刚讲完，屋子里的声音突然矮了一截。这半分钟需要有人填。',
+        '有人抛出一句：「所以……大家最近都在忙什么？」然后没有人接。'],
+      neu:'低头搅了搅杯子里的东西，等别人开口。',
+      expo:'接住它：我最近在准备一个作业，忙得有点想原地消失。' },
+    { id:'interrupt', text:[
+        '你刚开口说了半句，另一个人从上面把话接了过去，说完了你想说的意思，还说得更热闹。',
+        '你说到一半，旁边两个人同时开口了。你的话掉在半空中。'],
+      neu:'算了，把剩下半句咽回去。',
+      expo:'嗯，我刚才还没说完——我想说的是……' },
+    { id:'question', text:[
+        '有人转过头问你：「你平时周末都干嘛？」这个问题看着简单，但你脑子里一片空白。',
+        '「你是做什么的？」——这个问题被问出来的时候，房间里正好安静了一点。',
+        '有人问你：「你怎么会来这种局呀？」三个人在等你回答。'],
+      neu:'就那样吧，在家躺着比较多。',
+      expo:'说实话，我不太喜欢这种场合，但我想试试看能不能待得住。',
+      tag:'own' },
+    { id:'joke', text:[
+        '有人讲了个不太好笑的玩笑。桌上的人都在笑，笑声有点大。你没听懂笑点，但你也得决定要不要笑。',
+        '一个人说完，自己先笑了。别人跟着笑。这笑声里，有一半是礼貌。'],
+      neu:'跟着笑一下，然后喝口水。',
+      expo:'我没听懂，笑点是什么？——说完你自己也笑了。' },
+    { id:'smalltalk', text:[
+        '旁边的女生侧过来问你：「你是做什么工作的？」这是个能聊两句的机会，也可能是一场漫长的审问。',
+        '你和旁边的人算是单独说上话了。TA 问了句什么，你只回了三个字，然后两个人都盯着各自的杯子。'],
+      neu:'还行吧，就那样。然后安静下来。',
+      expo:'我做设计的，不过最近在想要不要换方向。你呢？',
+      tag:'alone' }
+  ],
+  act3: [
+    { id:'spotlight', text:[
+        '有人忽然把话头扔给你：「诶，让 TA 说说 —— 你怎么看？」七八双眼睛一起转过来。',
+        '主人举着蛋糕走过来，对全屋说：「来来来，请今天的新面孔讲两句。」',
+        '有人问了个需要你认真回答的问题，然后房间里其他声音都停了。'],
+      neu:'我不太会说这个，你们继续。',
+      expo:'好，我说两句。我其实挺紧张的，但我是真的想认识你们。' },
+    { id:'challenge', text:[
+        '你说了一句话，有人不同意，追问了一句：「为什么啊？」TA 不是恶意的，但 TA 在看着你。',
+        '你说完，有人反问：「你确定吗？我倒觉得正好相反。」屋子里安静了一点，像在等你怎么接。'],
+      neu:'嗯……也可能你说得对。',
+      expo:'我还是觉得我的想法是成立的。我再说清楚一点——',
+      tag:'own' },
+    { id:'awkward', text:[
+        '你说完一句话，没有人接。安静了三秒，那三秒特别长。',
+        '你的话掉在了地上。有人咳了一下，有人拿起杯子，话题慢慢挪到别的方向去了。',
+        '你开了个口，气氛凉了一下。你立刻开始后悔刚才那句。'],
+      neu:'（低头，假装刚才那句不重要。）',
+      expo:'（把这句话接下去，哪怕有点冷。）我说得不太好，不过我还是想说完。' },
+    { id:'group', text:[
+        '有人提议一起拍张照。所有人开始往中间凑，你站在最外圈。',
+        '有人举起杯子说「来，为新家干一杯」。一圈杯子碰在一起，你要不要也伸手进去。'],
+      neu:'站在最边上，等大家举完杯。',
+      expo:'主动把杯子伸进那圈中间，跟最近那几个人碰了一下。' }
+  ],
+  act4: [
+    { id:'leave', text:[
+        '有人开始穿外套了。你也可以走了——但如果现在走，这一整晚就到这里为止。',
+        '你看了眼时间，其实该走了。门口那一小段路，是今晚最后一次跟人说话的机会。'],
+      neu:'趁大家不注意，悄悄去门口拿外套。',
+      expo:'跟最近的三个人说了再见，还说了句「今天挺开心的」。' },
+    { id:'nexttime', text:[
+        '有人问你：「下次有空再一起出来玩啊？」语气很随意，像是在客套。',
+        '临走前，有人加了群，说下次还叫你。你不太确定这是不是真的。'],
+      neu:'嗯嗯，好啊，有空的话。',
+      expo:'好啊，你下次的局叫我，我来。',
+      tag:'own' },
+    { id:'name', text:[
+        '刚才跟你聊了几句的那个人也在穿外套。你们可能不会再见面了。',
+        '门口有点挤，你在等电梯。旁边站着今晚说过两句话的那个人。'],
+      neu:'电梯来了，点了头，各自进去。',
+      expo:'问了一下 TA 的名字，说下次还来。',
+      tag:'name' }
+  ]
+};
+
+const ACTS = [
+  { id:'act1', lab:'第一幕 · 入场', take:3, pressure:6 },
+  { id:'act2', lab:'第二幕 · 融入', take:4, pressure:13 },
+  { id:'act3', lab:'第三幕 · 高峰', take:3, pressure:21 },
+  { id:'act4', lab:'第四幕 · 收尾', take:2, pressure:3 }
+];
+
+/* 道具的一句话说明（用于出门前的背包卡片） */
+const ITEM_DESC = {
+  phone:'刷两下，等心跳慢下来',
+  water:'喝一口，手上有点事做',
+  cup:'握紧它，指尖有个支撑',
+  balcony:'去外面站一会儿，透口气',
+  script:'把要说的话提前想好',
+  corner:'找一个靠墙的位置待着',
+  early:'比大家早到，先在熟人旁边',
+  help:'进厨房帮忙，手上忙起来',
+  smile:'保持微笑，多点头',
+  askback:'把话题抛回给对方',
+  wingman:'跟一个熟人一起去',
+  bydoor:'挑一张离门口最近的椅子'
+};
+
+/* ============================ 存档 ============================ */
+const store = {
+  mem: {},
+  get(k, d) {
+    try {
+      const raw = localStorage.getItem(k);
+      if (raw === null) return this.mem[k] !== undefined ? this.mem[k] : d;
+      return JSON.parse(raw);
+    } catch (e) { return this.mem[k] !== undefined ? this.mem[k] : d; }
+  },
+  set(k, v) {
+    this.mem[k] = v;
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {}
+  }
+};
+const KEY_RUNS = 'beibao.runs';
+const KEY_HIST = 'beibao.hist';
+const KEY_EXP  = 'beibao.exp';
+const KEY_BEST = 'beibao.best';
+
+/* ============================ 随机数 ============================ */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* ============================ 场景插画 ============================ */
+const hsl = (h, s, l, a = 1) => 'hsla(' + h + ',' + s + '%,' + l + '%,' + a + ')';
+
+function person(x, feetY, hh, op, fill, cup) {
+  const w = hh * 0.32, hr = hh * 0.115, top = feetY - hh * 0.76;
+  let out = '<g opacity="' + op.toFixed(3) + '" fill="' + fill + '">'
+    + '<circle cx="' + x.toFixed(1) + '" cy="' + (feetY - hh + hr).toFixed(1) + '" r="' + hr.toFixed(1) + '"/>'
+    + '<path d="M' + (x - w / 2).toFixed(1) + ' ' + feetY.toFixed(1)
+    + ' C ' + (x - w / 2 - 5).toFixed(1) + ' ' + (feetY - hh * 0.42).toFixed(1)
+    + ' ' + (x - w * 0.34).toFixed(1) + ' ' + top.toFixed(1) + ' ' + x.toFixed(1) + ' ' + top.toFixed(1)
+    + ' C ' + (x + w * 0.34).toFixed(1) + ' ' + top.toFixed(1)
+    + ' ' + (x + w / 2 + 5).toFixed(1) + ' ' + (feetY - hh * 0.42).toFixed(1)
+    + ' ' + (x + w / 2).toFixed(1) + ' ' + feetY.toFixed(1) + ' Z"/></g>';
+  if (cup) {
+    out += '<rect x="' + (x + w * 0.4).toFixed(1) + '" y="' + (feetY - hh * 0.46).toFixed(1)
+      + '" width="' + (hh * 0.05).toFixed(1) + '" height="' + (hh * 0.07).toFixed(1)
+      + '" rx="2" opacity="' + (op * 0.85).toFixed(2) + '" fill="' + fill + '"/>';
+  }
+  return out;
+}
+
+function crowd(r, n, hue, fill) {
+  let out = '';
+  const rows = [
+    { feet: 452, lo: 126, hi: 148, opl: 0.5,  oph: 0.7,  x0: 80,  x1: 1120, share: 0.28 },
+    { feet: 506, lo: 156, hi: 182, opl: 0.62, oph: 0.84, x0: 40,  x1: 1160, share: 0.34 },
+    { feet: 578, lo: 188, hi: 228, opl: 0.8,  oph: 1.0,  x0: 5,   x1: 1195, share: 0.38 }
+  ];
+  rows.forEach(function (row) {
+    const count = Math.max(2, Math.round(n * row.share));
+    for (let i = 0; i < count; i++) {
+      const x = row.x0 + r() * (row.x1 - row.x0);
+      const hh = row.lo + r() * (row.hi - row.lo);
+      const op = row.opl + r() * (row.oph - row.opl);
+      const c = r() < 0.5 ? fill : hsl(hue, 26, 4 + r() * 5);
+      out += person(x, row.feet + r() * 10, hh, op, c, r() < 0.3);
+    }
+  });
+  return out;
+}
+
+function sceneArt(sc, seed, mini) {
+  const r = mulberry32(seed);
+  const h = sc.hue;
+  const wallA = hsl(h, 20, 12), wallB = hsl(h, 26, 5.5);
+  const tone = hsl(h, 18, 4.5);
+  const warm = hsl(Math.min(48, h + 22), 80, 64);
+  const cool = hsl((h + 190) % 360, 52, 58);
+  const dark = function (a) { return hsl(h, 18, 8, a); };
+  const id = function (k) { return k + seed; };
+  const o = [];
+
+  o.push('<defs>');
+  o.push('<linearGradient id="' + id('w') + '" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="' + wallA + '"/><stop offset="1" stop-color="' + wallB + '"/></linearGradient>');
+  o.push('<radialGradient id="' + id('lamp') + '" cx="50%" cy="50%" r="50%">'
+    + '<stop offset="0" stop-color="' + warm + '" stop-opacity=".5"/>'
+    + '<stop offset="42%" stop-color="' + warm + '" stop-opacity=".14"/>'
+    + '<stop offset="100%" stop-color="' + warm + '" stop-opacity="0"/></radialGradient>');
+  o.push('<radialGradient id="' + id('win') + '" cx="50%" cy="42%" r="60%">'
+    + '<stop offset="0" stop-color="' + cool + '" stop-opacity=".45"/>'
+    + '<stop offset="100%" stop-color="' + cool + '" stop-opacity="0"/></radialGradient>');
+  o.push('<filter id="' + id('b') + '" x="-30%" y="-30%" width="160%" height="160%">'
+    + '<feGaussianBlur stdDeviation="7"/></filter>');
+  o.push('<filter id="' + id('b2') + '" x="-30%" y="-30%" width="160%" height="160%">'
+    + '<feGaussianBlur stdDeviation="20"/></filter>');
+  o.push('</defs>');
+
+  const floorY = 452;
+  o.push('<rect width="1200" height="700" fill="url(#' + id('w') + ')"/>');
+  o.push('<path d="M0 ' + floorY + ' H1200" stroke="' + hsl(h, 22, 17) + '" stroke-width="2" opacity=".75"/>');
+  o.push('<path d="M0 96 H1200" stroke="' + hsl(h, 20, 15) + '" stroke-width="1.3" opacity=".45"/>');
+
+  /* 窗 */
+  const wx = r() < 0.5 ? 110 : 840;
+  o.push('<g><rect x="' + wx + '" y="112" width="250" height="286" fill="' + hsl((h + 195) % 360, 42, 24) + '"/>'
+    + '<rect x="' + wx + '" y="112" width="250" height="286" fill="url(#' + id('win') + ')"/>'
+    + '<path d="M' + (wx + 125) + ' 112 V398 M' + wx + ' 255 H' + (wx + 250) + '" stroke="' + hsl(h, 20, 9)
+    + '" stroke-width="7" opacity=".85"/></g>');
+  o.push('<path d="M' + (wx - 40) + ' 700 L' + (wx + 50) + ' 300 L' + (wx + 310) + ' 300 L' + (wx + 250)
+    + ' 700 Z" fill="' + cool + '" opacity=".06"/>');
+
+  /* 吊灯 */
+  const lamps = sc.props === 'hall' ? [230, 600, 970] : [340, 880];
+  lamps.forEach(function (lx, i) {
+    const ly = 330 + (i % 2) * 26;
+    o.push('<ellipse cx="' + lx + '" cy="' + ly + '" rx="240" ry="155" fill="url(#' + id('lamp') + ')"/>');
+    o.push('<path d="M' + lx + ' 0 V' + (104 + (i % 2) * 26) + '" stroke="' + hsl(h, 12, 24) + '" stroke-width="2.2"/>');
+    o.push('<path d="M' + (lx - 36) + ' ' + (146 + (i % 2) * 26) + ' q36 -36 72 0 z" fill="'
+      + hsl(h, 30, 32) + '" opacity=".9"/>');
+    o.push('<ellipse cx="' + lx + '" cy="' + (147 + (i % 2) * 26) + '" rx="42" ry="8" fill="' + warm + '" opacity=".6"/>');
+  });
+
+  /* 地面光池 */
+  o.push('<ellipse cx="600" cy="512" rx="640" ry="96" fill="' + warm + '" opacity=".06"/>');
+
+  /* 家具 */
+  if (sc.props === 'living') {
+    o.push('<g fill="' + dark(0.95) + '">'
+      + '<path d="M112 448 q0 -50 46 -50 h150 q28 0 28 28 v22 z"/>'
+      + '<rect x="96" y="446" width="284" height="58" rx="18"/></g>');
+    o.push('<rect x="770" y="428" width="300" height="19" rx="9" fill="' + dark(0.9) + '"/>');
+    o.push('<path d="M462 470 h272 v46 a16 16 0 0 1 -16 16 h-240 a16 16 0 0 1 -16 -16 z" fill="' + dark(0.95) + '"/>');
+  } else if (sc.props === 'table') {
+    o.push('<ellipse cx="600" cy="534" rx="336" ry="74" fill="' + hsl(h, 24, 10) + '"/>');
+    o.push('<ellipse cx="600" cy="524" rx="336" ry="74" fill="' + hsl(h, 26, 16) + '"/>');
+    o.push('<ellipse cx="600" cy="524" rx="300" ry="60" fill="' + hsl(h, 24, 21) + '" opacity=".5"/>');
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      o.push('<ellipse cx="' + (600 + Math.cos(a) * 158).toFixed(0) + '" cy="' + (524 + Math.sin(a) * 34).toFixed(0)
+        + '" rx="16" ry="6" fill="' + hsl(h, 42, 62) + '" opacity=".45"/>');
+    }
+  } else if (sc.props === 'desk') {
+    o.push('<rect x="110" y="118" width="430" height="230" rx="8" fill="' + hsl(h, 16, 23) + '" opacity=".92"/>');
+    o.push('<g stroke="' + hsl(h, 28, 44) + '" stroke-width="2" opacity=".3">'
+      + '<path d="M160 178 h120 M160 214 h250 M160 250 h180 M160 286 h210"/></g>');
+    o.push('<rect x="104" y="474" width="992" height="52" rx="10" fill="' + dark(0.95) + '"/>');
+    o.push('<rect x="104" y="474" width="992" height="11" fill="' + hsl(h, 30, 27) + '" opacity=".7"/>');
+  } else {
+    for (let d = 0; d < 3; d++) {
+      const yy = 468 + d * 56, rr = 300 - d * 22, oy = rr * 0.26;
+      o.push('<ellipse cx="600" cy="' + yy + '" rx="' + rr + '" ry="' + oy.toFixed(0) + '" fill="'
+        + hsl(h, 26, 12 - d * 2) + '"/>');
+      o.push('<ellipse cx="600" cy="' + (yy - 9) + '" rx="' + rr + '" ry="' + oy.toFixed(0) + '" fill="'
+        + hsl(h, 30, 18 - d * 3) + '" opacity=".8"/>');
+    }
+  }
+
+  /* 人群 */
+  o.push(crowd(r, mini ? Math.round(sc.crowd * 0.55) : sc.crowd, h, tone));
+
+  /* 前景人影与浮尘 */
+  if (!mini) {
+    o.push('<g filter="url(#' + id('b') + ')" opacity=".97">'
+      + person(110 + r() * 80, 672, 306 + r() * 46, 1, tone, false)
+      + person(1010 + r() * 90, 672, 292 + r() * 54, 1, tone, true) + '</g>');
+    o.push('<g filter="url(#' + id('b2') + ')" opacity=".45"><ellipse cx="600" cy="700" rx="720" ry="86" fill="'
+      + hsl(h, 20, 3) + '"/></g>');
+    for (let i = 0; i < 14; i++) {
+      const mx = (r() * 1200).toFixed(0), my = (250 + r() * 330).toFixed(0);
+      const dur = (15 + r() * 16).toFixed(1), dl = (r() * 12).toFixed(1);
+      o.push('<circle cx="' + mx + '" cy="' + my + '" r="' + (0.9 + r() * 1.7).toFixed(1) + '" fill="' + warm + '" opacity="0">'
+        + '<animate attributeName="opacity" values="0;.4;0" dur="' + dur + 's" begin="' + dl + 's" repeatCount="indefinite"/>'
+        + '<animate attributeName="cy" values="' + my + ';' + (my - 100 - r() * 90).toFixed(0) + '" dur="' + dur
+        + 's" begin="' + dl + 's" repeatCount="indefinite"/></circle>');
+    }
+  }
+
+  return '<svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">'
+    + o.join('') + '</svg>';
+}
+
+function titleArt() {
+  return '<svg viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">'
+    + '<defs>'
+    + '<linearGradient id="tw" x1="0" y1="0" x2="0" y2="1">'
+    + '<stop offset="0" stop-color="#181114"/><stop offset="1" stop-color="#0a0709"/></linearGradient>'
+    + '<radialGradient id="td" cx="50%" cy="52%" r="48%">'
+    + '<stop offset="0" stop-color="#f2b76b" stop-opacity=".9"/>'
+    + '<stop offset="58%" stop-color="#e0893a" stop-opacity=".3"/>'
+    + '<stop offset="100%" stop-color="#e0893a" stop-opacity="0"/></radialGradient>'
+    + '</defs>'
+    + '<rect width="1200" height="700" fill="url(#tw)"/>'
+    + '<path d="M470 0 H730 V566 H470 Z" fill="#050406"/>'
+    + '<path d="M470 0 H730 V566 H470 Z" fill="url(#td)"/>'
+    + '<rect x="470" y="0" width="260" height="566" fill="none" stroke="#2a201c" stroke-width="9"/>'
+    + '<rect x="452" y="0" width="296" height="18" fill="#241a17"/>'
+    + '<rect x="0" y="566" width="1200" height="134" fill="#080607"/>'
+    + '<g fill="#050406">'
+    + '<circle cx="600" cy="322" r="35"/>'
+    + '<path d="M600 360 c-54 0 -76 44 -82 100 c-3 30 0 106 0 106 h164 c0 0 3 -76 0 -106 c-6 -56 -28 -100 -82 -100 z"/>'
+    + '<path d="M694 452 h52 a15 15 0 0 1 0 30 h-52 z"/>'
+    + '<path d="M634 478 h60 a11 11 0 0 1 11 11 v62 a11 11 0 0 1 -11 11 h-60 z"/>'
+    + '</g>'
+    + '<ellipse cx="600" cy="570" rx="156" ry="15" fill="#0b0809"/>'
+    + '<rect width="1200" height="700" fill="#0a0709" opacity=".3"/>'
+    + '</svg>';
+}
+
+/* ============================ 脑内弹幕 ============================ */
+function seedThoughts() {
+  const box = $('#thoughts');
+  box.innerHTML = '';
+  someOf(THOUGHTS, 6).forEach(function (t) {
+    const d = document.createElement('div');
+    d.className = 'th';
+    d.textContent = t;
+    d.style.left = (5 + Math.random() * 64) + '%';
+    d.style.top = (7 + Math.random() * 60) + '%';
+    d.style.transform = 'rotate(' + (Math.random() * 6 - 3).toFixed(1) + 'deg)';
+    box.appendChild(d);
+  });
+}
+function paintThoughts(anx) {
+  const a = clamp((anx - 32) / 62, 0, 1);
+  const els = $$('.th');
+  for (let i = 0; i < els.length; i++) {
+    const sway = Math.sin(Date.now() / (2600 + i * 420) + i) * 1.5;
+    els[i].style.color = 'rgba(246,226,208,' + (a * (0.26 + i * 0.115)).toFixed(3) + ')';
+    els[i].style.marginTop = sway.toFixed(2) + 'px';
+  }
+}
+
+/* ============================ 进度与状态 ============================ */
+let S = null;
+let SELF = false;
+
+function habitBase(sc) {
+  const runs = store.get(KEY_RUNS, {})[sc.id] || 0;
+  const raw = Math.max(26, Math.round(62 * Math.pow(0.88, runs)));
+  return clamp(Math.round(raw * sc.diff), 22, 88);
+}
+function entryAnxiety(sc, kept, droppedN) {
+  return clamp(habitBase(sc) - kept * 4 + droppedN * 2, 8, 100);
+}
+function expState() {
+  const e = store.get(KEY_EXP, 0);
+  return { exp: e, level: Math.floor(e / 24) + 1, pct: Math.round((e % 24) / 24 * 100) };
+}
+
+function showScreen(id) {
+  $$('.screen').forEach(function (s) { s.classList.toggle('on', s.id === id); });
+  $('#panel').style.display = id ? 'none' : '';
+  $('#stage').style.opacity = id ? '.32' : '1';
+  document.querySelector('.hud').style.display = id ? 'none' : '';
+}
+
+/* ============================ 选场合 ============================ */
+function renderSelect() {
+  const runs = store.get(KEY_RUNS, {});
+  const box = $('#sceneCards');
+  box.innerHTML = SCENES.map(function (sc, i) {
+    const n = runs[sc.id] || 0;
+    const a = entryAnxiety(sc, 5, 3);
+    return '<button class="card" data-scene="' + sc.id + '">'
+      + '<div class="cardArt">' + sceneArt(sc, 1000 + i, true) + '</div>'
+      + '<div class="cardBody"><h3>' + sc.name + '</h3>'
+      + '<p>' + sc.sub + ' · ' + sc.intro + '</p>'
+      + '<div class="cardFoot"><span class="pill' + (n === 0 ? ' fresh' : '') + '">'
+      + (n === 0 ? '第一次去' : '去过 ' + n + ' 次') + '</span>'
+      + '<span>进门时预计焦虑 ' + a + '</span></div></div></button>';
+  }).join('');
+  $$('#sceneCards .card').forEach(function (c) {
+    c.addEventListener('click', function () { startSetup(c.dataset.scene); });
+  });
+}
+
+/* ============================ 出门前：装包、定目标、猜一下 ============================ */
+let SETUP = null;
+const KEEP_CAP = 60;
+
+function startSetup(sceneId) {
+  const sc = SCENES.filter(function (s) { return s.id === sceneId; })[0];
+  const pack = someOf(ITEMS.filter(function (i) { return !i.fake; }), 4)
+    .concat(someOf(ITEMS.filter(function (i) { return i.fake; }), 4));
+  SETUP = { sc: sc, pack: pack, dropped: [], goals: someOf(GOALS, 5), chosen: [], pred: 60 };
+  $('#setupKicker').textContent = sc.sub;
+  $('#setupName').textContent = sc.name;
+  $('#setupIntro').textContent = sc.intro;
+  renderPack();
+  renderGoalPick();
+  $('#predSlider').value = 60;
+  $('#predVal').textContent = '60';
+  showScreen('sSetup');
+}
+
+function renderPack() {
+  const kept = SETUP.pack.length - SETUP.dropped.length;
+  $('#packCards').innerHTML = SETUP.pack.map(function (it) {
+    const off = SETUP.dropped.indexOf(it.id) >= 0;
+    return '<button class="card" data-drop="' + it.id + '" style="' + (off ? 'opacity:.42;' : '') + '">'
+      + '<div class="cardBody" style="padding:16px 18px">'
+      + '<h3 style="font-size:16.5px;margin-bottom:4px">' + it.name
+      + ' <span style="font-size:11px;color:var(--ink-faint);font-family:var(--sans)">'
+      + (off ? '已放进门口的箱子' : '带在身上') + '</span></h3>'
+      + '<p>' + (ITEM_DESC[it.id] || '') + '</p>'
+      + '<div class="cardFoot"><span>' + (off ? '点一下拿回来' : '点一下放下') + '</span>'
+      + '<span class="pill">可用 ' + it.uses + ' 次</span></div>'
+      + '</div></button>';
+  }).join('');
+  $$('#packCards .card').forEach(function (c) {
+    c.addEventListener('click', function () {
+      const id = c.dataset.drop, k = SETUP.dropped.indexOf(id);
+      if (k >= 0) SETUP.dropped.splice(k, 1); else SETUP.dropped.push(id);
+      renderPack();
+    });
+  });
+  $('#setupHint').textContent = '带 ' + kept + ' 件 → 进门焦虑约 '
+    + entryAnxiety(SETUP.sc, kept, SETUP.dropped.length) + '，连接上限 ' + connCapOf(kept)
+    + '　（已放进箱子 ' + SETUP.dropped.length + ' 件）';
+}
+function connCapOf(kept) { return Math.max(12, KEEP_CAP - kept * 4); }
+
+function renderGoalPick() {
+  $('#goalPick').innerHTML = SETUP.goals.map(function (g) {
+    const on = SETUP.chosen.indexOf(g.id) >= 0;
+    return '<button class="goal' + (on ? ' sel' : '') + '" data-goal="' + g.id + '">'
+      + '<span class="gk">' + g.k + '</span>' + g.text + '</button>';
+  }).join('');
+  $$('#goalPick .goal').forEach(function (b) {
+    b.addEventListener('click', function () {
+      const id = b.dataset.goal, k = SETUP.chosen.indexOf(id);
+      if (k >= 0) SETUP.chosen.splice(k, 1);
+      else if (SETUP.chosen.length < 3) SETUP.chosen.push(id);
+      renderGoalPick();
+    });
+  });
+}
+
+/* ============================ 开局 ============================ */
+function beginSession() {
+  const sc = SETUP.sc;
+  const kept = SETUP.pack.filter(function (i) { return SETUP.dropped.indexOf(i.id) < 0; });
+  const nodes = [];
+  ACTS.forEach(function (a) {
+    someOf(NODES[a.id], a.take).forEach(function (n) {
+      nodes.push({ act: a, node: n, pressure: a.pressure });
+    });
+  });
+  S = {
+    scene: sc,
+    seed: rint(1, 999999),
+    nodes: nodes,
+    at: -1,
+    mode: 'resolve',
+    trait: pick(TRAITS),
+    anx: 0, base: entryAnxiety(sc, kept.length, SETUP.dropped.length),
+    debt: 0, conn: 0, peak: 0, curve: [],
+    bag: kept.map(function (i) { return { item: i, left: i.uses }; }),
+    used: new Set(), dropped: SETUP.dropped.slice(), droppedInside: [],
+    connCap: connCapOf(kept.length),
+    goals: SETUP.chosen.map(function (id) { return GOALS.filter(function (g) { return g.id === id; })[0]; }),
+    spoken: new Set(), ownWords: 0, exposures: 0, initiated: 0, alone: false, remembered: false, left: false,
+    predicted: SETUP.pred, idle: 0, exposuresInPeak: 0, log: []
+  };
+  S.anx = S.base;
+  $('#art').innerHTML = sceneArt(sc, S.seed, false);
+  seedThoughts();
+  showScreen(null);
+  nextNode();
+}
+
+/* ============================ 焦虑引擎 ============================ */
+function targetAnx() { return clamp(S.base + S.debt * 0.75 + S.pressure * 1.35, 8, 100); }
+function isLocked() { return S.anx >= 86; }
+const LOCK_AT = 86, UNLOCK_AT = 76;
+
+function tick(now) {
+  requestAnimationFrame(tick);
+  if (!S) return;
+  const dt = Math.min(0.06, (now - (S._t || now)) / 1000);
+  S._t = now;
+  advanceAnx(dt);
+  paint();
+  syncNode();
+}
+
+/* 焦虑的时间推进：先往上冲到目标值，站够 5 秒之后开始自己退潮。
+   这一段同时被动画帧和自检调用，保证逻辑只有一处。 */
+function advanceAnx(dt) {
+  if (!S || S.mode !== 'node') return;
+  S.idle += dt;
+  const tg = targetAnx();
+  const decaying = S.idle > 5;
+  const goal = decaying ? clamp(tg - 30, 6, 100) : tg;
+  S.anx += (goal - S.anx) * Math.min(1, (decaying ? 3.6 : 7.6) * dt);
+  S.anx = clamp(S.anx, 2, 100);
+  if (S.anx > (S.peak || 0)) S.peak = S.anx;
+  if (S.idle >= 5.2 && !S._peakNoticed) {
+    S._peakNoticed = true;
+    if (S.anx >= 52) S.waitedTrough = true;
+  }
+  S.curve.push(S.anx);
+  if (S.curve.length > 1200) S.curve.shift();
+}
+
+function paint() {
+  const a = (S.anx - 20) / 80;
+  const wrap = $('#sceneWrap');
+  wrap.style.setProperty('--anx', clamp(a, 0, 1).toFixed(3));
+  wrap.style.setProperty('--clear', (74 - clamp(a, 0, 1) * 46).toFixed(1) + '%');
+  $('#stage').style.setProperty('--anx', clamp(a, 0, 1).toFixed(3));
+  $('#stage').style.setProperty('--clear', (74 - clamp(a, 0, 1) * 46).toFixed(1) + '%');
+  wrap.classList.toggle('shake', S.anx >= 84);
+  $('#mAnx').textContent = Math.round(S.anx);
+  $('#mCon').textContent = Math.round(S.conn);
+  $('#mDebt').textContent = Math.round(S.debt);
+  paintThoughts(S.anx);
+  drawCurve();
+}
+
+function drawCurve() {
+  const svg = $('#curve');
+  if (!svg || !S.curve.length) return;
+  const W = 190, H = 44, n = S.curve.length;
+  const pts = [];
+  const stride = Math.max(1, Math.floor(n / W));
+  for (let i = 0; i < n; i += stride) {
+    const x = (i / Math.max(1, n - 1)) * W;
+    const y = H - (S.curve[i] / 100) * H;
+    pts.push(x.toFixed(1) + ',' + y.toFixed(1));
+  }
+  const col = S.anx >= LOCK_AT ? '#e2574d' : S.anx >= 60 ? '#e0a04a' : '#7fb6a8';
+  svg.innerHTML = '<path d="M0 ' + (H - LOCK_AT / 100 * H) + ' H' + W + '" stroke="rgba(226,87,77,.42)"'
+    + ' stroke-width="1" stroke-dasharray="3 4"/>'
+    + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="1.8"'
+    + ' stroke-linejoin="round"/>';
+}
+
+/* ============================ 节点渲染 ============================ */
+function nextNode() {
+  if (!S || S.mode !== 'resolve') return;
+  S.at++;
+  if (S.at >= S.nodes.length) { endSession(); return; }
+  const cur = S.nodes[S.at];
+  S.pressure = cur.pressure;
+  S.trait = pick(TRAITS);
+  S.idle = 0;
+  S.mode = 'node';
+  S._peakNoticed = false;
+  $('#actLab').textContent = cur.act.lab + '　' + (S.at + 1) + '/' + S.nodes.length;
+  $('#sceneName').textContent = S.scene.name;
+  $('#sceneSub').textContent = S.scene.sub;
+  const txt = pick(cur.node.text);
+  $('#narr').innerHTML = txt;
+  $('#react').innerHTML = '';
+  renderBag();
+  renderOptions();
+}
+
+function renderBag() {
+  const row = $('#bagRow');
+  let html = '<span class="bagLab">包里 ' + (S.bag.length ? '' : '（空了）') + '</span>';
+  S.bag.forEach(function (b) {
+    const out = b.left <= 0;
+    html += '<span class="item' + (out ? ' used' : '') + '">'
+      + '<button class="u" data-use="' + b.item.id + '"' + (out ? ' disabled' : '') + '>'
+      + '<span class="dot"></span>' + b.item.name + '<span class="n">' + b.left + '</span></button>'
+      + '<button class="x" data-drop="' + b.item.id + '" aria-label="把' + b.item.name + '丢进门口的箱子">✕</button>'
+      + '</span>';
+  });
+  html += '<span class="hint">点名字＝用它回避　·　点 ✕＝把它丢进门口的箱子</span>';
+  row.innerHTML = html;
+  $$('#bagRow [data-use]').forEach(function (el) {
+    el.addEventListener('click', function () { choose('safety', el.dataset.use); });
+  });
+  $$('#bagRow [data-drop]').forEach(function (el) {
+    el.addEventListener('click', function () { dropInside(el.dataset.drop); });
+  });
+}
+
+function renderOptions() {
+  const cur = S.nodes[S.at], node = cur.node;
+  const box = $('#opts');
+  let html = '<button class="opt" data-kind="neutral">'
+    + '<span class="k">1</span><span class="t">' + node.neu + '</span></button>';
+  html += '<button class="opt expo" data-kind="expo">'
+    + '<span class="k">2</span><span class="t">' + node.expo + '</span>'
+    + '<span class="tag" id="expoTag">说真的</span></button>';
+  box.innerHTML = html;
+  $$('#opts .opt').forEach(function (el) {
+    el.addEventListener('click', function () {
+      choose(el.dataset.kind, el.dataset.id);
+    });
+  });
+  $('#foot').innerHTML = '<span>你什么都不用做，就站在这儿也可以——焦虑会自己退下去。</span>'
+    + '<button id="btnLeave" style="margin-left:auto">悄悄走掉</button>';
+  $('#btnLeave').addEventListener('click', function () { S.left = true; endSession(); });
+  syncNode();
+}
+
+function syncNode() {
+  if (!S || S.mode !== 'node') return;
+  const expo = $('#opts .opt.expo');
+  const tag = $('#expoTag');
+  if (expo) {
+    const locked = S.anx >= LOCK_AT;
+    if (locked && !S._locked) {
+      S._locked = true;
+      $('#react').innerHTML = '<span class="r">（心跳顶到嗓子眼了。这时候你连「说点什么」都点不动——'
+        + '不是你不勇敢，是恐惧会先把你能做的事收窄。）</span>';
+    }
+    if (!locked && S._locked && S.anx < UNLOCK_AT) {
+      S._locked = false;
+      $('#react').innerHTML = '<span class="r">（心跳还在，但它自己往下走了一点。）</span>';
+    }
+    expo.disabled = locked;
+    if (tag) tag.textContent = locked ? '现在开不了口' : (S.idle >= 12 ? '带着紧张也要说' : '说真的');
+  }
+  if (S.idle >= 5.2 && !S._peakNoticed) {
+    S._peakNoticed = true;
+    $('#react').innerHTML = '<span class="r">（你没有说话，也没有走。'
+      + '刚才那阵往上冲的劲儿，到顶以后开始掉头了。）</span>';
+  }
+}
+
+/* ============================ 做选择 ============================ */
+function delta(label, v, goodWhenNegative) {
+  const s = (v >= 0 ? '+' : '') + v.toFixed(1);
+  const good = goodWhenNegative ? v < -0.05 : v > 0.05;
+  const bad = goodWhenNegative ? v > 0.05 : v < -0.05;
+  const c = good ? 'var(--calm)' : bad ? 'var(--anx)' : 'var(--ink-faint)';
+  return '<b style="color:' + c + ';font-weight:400">' + label + ' ' + s + '</b>';
+}
+
+function choose(kind, id) {
+  if (!S || S.mode !== 'node') return;
+  const cur = S.nodes[S.at], node = cur.node;
+  const waited = S.idle >= 12;
+  const a0 = S.anx, c0 = S.conn, d0 = S.debt;
+  let out = '', react = '', tag = '';
+
+  if (kind === 'safety') {
+    const b = S.bag.filter(function (x) { return x.item.id === id && x.left > 0; })[0];
+    if (!b) return;
+    b.left--;
+    S.used.add(id);
+    S.anx = clamp(S.anx - b.item.anx, 4, 100);
+    S.conn = clamp(S.conn - b.item.con * 0.6, 0, S.connCap);
+    S.debt += b.item.debt;
+    out = b.item.use;
+    react = b.item.after + '<br><span class="r">' + S.trait.safe + '</span>';
+    tag = '回避 · ' + b.item.name;
+  } else if (kind === 'neutral') {
+    S.anx = clamp(S.anx - 2, 2, 100);
+    S.conn = clamp(S.conn + 2.5, 0, S.connCap);
+    S.debt += 1;
+    S.spoken.add(node.id);
+    out = node.neu;
+    react = '<span class="r">' + S.trait.neu + '</span>';
+    tag = '稳妥';
+  } else {
+    const gain = waited ? 19 : 12, relief = waited ? 7 : 9;
+    S.anx = clamp(S.anx + relief, 2, 100);
+    S.conn = clamp(S.conn + gain, 0, S.connCap);
+    S.debt = Math.max(0, S.debt - (waited ? 8 : 6));
+    S.exposures++; S.ownWords++; S.spoken.add(node.id);
+    if (waited) S.waitedTrough = true;
+    if (node.tag === 'name') S.remembered = true;
+    if (node.tag === 'init') S.initiated++;
+    if (node.tag === 'alone') S.alone = true;
+    if (node.tag === 'own') S.ownWords++;
+    out = node.expo;
+    react = '<span class="r">' + S.trait.exp + (waited ? '　（你是在最难受的那一刻说的这句。）' : '') + '</span>';
+    tag = waited ? '撑过了峰值' : '坦白';
+  }
+
+  if (S.anx > (S.peak || 0)) S.peak = S.anx;
+
+  S.mode = 'resolve';
+  S._locked = false;
+  $('#narr').innerHTML = out;
+  $('#react').innerHTML = react;
+  $('#opts').innerHTML = '<button class="opt wide" data-kind="next"><span class="t">'
+    + (S.at + 1 >= S.nodes.length ? '走出这扇门' : '继续') + '</span></button>';
+  $('#opts .opt').addEventListener('click', nextNode);
+  $('#foot').innerHTML = '<span class="holdRing">'
+    + delta('焦虑', S.anx - a0, true) + delta('连接', S.conn - c0, false)
+    + delta('负债', S.debt - d0, true) + '</span>'
+    + '<span style="margin-left:auto">' + tag + '</span>';
+}
+
+function dropInside(id) {
+  if (!S || S.mode !== 'node') return;
+  const k = S.bag.map(function (b) { return b.item.id; }).indexOf(id);
+  if (k < 0 || S.droppedInside.indexOf(id) >= 0) return;
+  const b = S.bag.splice(k, 1)[0];
+  S.droppedInside.push(id);
+  S.dropped.push(id);
+  S.anx = clamp(S.anx + 16, 2, 100);
+  S.debt = Math.max(0, S.debt - 3);
+  S.connCap += 8;
+  renderBag();
+  renderOptions();
+  $('#react').innerHTML = '<span class="r">你把「' + b.item.name
+    + '」丢进了门口的箱子。那一刻心跳猛地窜了一下——但它没有一直窜下去。</span>';
+}
+
+/* ============================ 回家路上（结算） ============================ */
+function itemName(id) {
+  const it = ITEMS.filter(function (i) { return i.id === id; })[0];
+  return it ? it.name : id;
+}
+
+function closingText() {
+  const o = [];
+  if (S.exposures === 0) o.push('这一晚你几乎没有让自己开口。这不丢人——只是你会发现，包一直是满的，人也一直没进来。');
+  else if (S.exposures >= 5) o.push('你今晚开口的次数，比大多数人第一次来这种场合都要多。');
+  else o.push('你开口了 ' + S.exposures + ' 次。不算多，但每一次都是你自己决定的。');
+  if (S.debt >= 28) o.push('焦虑负债最后到了 ' + Math.round(S.debt) + '。躲开的那几次并没有把紧张拿走，只是把它存了起来，最后一起还。');
+  else if (S.debt <= 8) o.push('你几乎没往后面借债。也就是说，今晚的紧张基本是当场消化掉的。');
+  if (S.droppedInside.length) o.push('你把 ' + S.droppedInside.length + ' 件东西丢进了那个箱子——全场唯一一个先难受、后变好的动作。');
+  if (S.used.has('phone')) o.push('手机被你掏出来过。它每一次都很管用，也每一次都让你少被看见一点。');
+  if (S.waitedTrough) o.push('你至少有一次什么都没说，就站在那儿，然后亲眼看见心跳自己退了回去。记住那一次。');
+  if (S.peaked && S.peak >= LOCK_AT) o.push('焦虑最高的时候，你连「说点什么」这个选项都点不动了。这不是你软弱，这是恐惧会收窄你能做的事的范围。');
+  return o.join('');
+}
+
+function summaryCurve() {
+  const c = S.curve, n = c.length;
+  if (n < 3) return '';
+  const W = 660, H = 150, th = H - LOCK_AT / 100 * H;
+  const step = Math.max(1, Math.floor(n / 320));
+  const pts = [];
+  let pi = 0;
+  for (let i = 0; i < n; i++) {
+    if (i % step === 0) pts.push((i / (n - 1) * W).toFixed(1) + ',' + (H - c[i] / 100 * H).toFixed(1));
+    if (c[i] > c[pi]) pi = i;
+  }
+  const px = (pi / (n - 1) * W).toFixed(1), py = (H - c[pi] / 100 * H).toFixed(1);
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible" role="img" aria-label="本次的焦虑曲线">'
+    + '<path d="M0 ' + th.toFixed(1) + ' H' + W + '" stroke="rgba(226,87,77,.45)" stroke-width="1" stroke-dasharray="4 5"/>'
+    + '<text x="4" y="' + (th - 6).toFixed(1) + '" fill="#8b8078" font-size="11">'
+    + LOCK_AT + ' · 说不出话的那条线</text>'
+    + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#e8a44a" stroke-width="2" stroke-linejoin="round"/>'
+    + '<circle cx="' + px + '" cy="' + py + '" r="4" fill="#e2574d"/>'
+    + '<text x="' + Math.min(+px + 8, W - 90).toFixed(1) + '" y="' + Math.max(+py - 8, 14).toFixed(1)
+    + '" fill="#f4eee6" font-size="11.5">峰值 ' + Math.round(c[pi]) + '</text>'
+    + '<text x="4" y="' + (H - 2) + '" fill="#8b8078" font-size="11">进门</text>'
+    + '<text x="' + (W - 60) + '" y="' + (H - 2) + '" fill="#8b8078" font-size="11">出门</text>'
+    + '</svg>';
+}
+
+function endSession() {
+  if (!S || S.mode === 'over') return;
+  S.mode = 'over';
+  S.peaked = S.peak >= LOCK_AT;
+  const done = S.goals.filter(function (g) { return g.check(S); });
+  const raw = done.length * 22 + Math.min(S.conn, 60) * 0.8 - S.debt * 0.4 + S.dropped.length * 3;
+  const score = Math.round(clamp(raw, 0, 130) * clamp(S.scene.diff, 0.9, 1.3));
+  const rate = score >= 88 ? 'A' : score >= 70 ? 'B' : score >= 50 ? 'C' : 'D';
+  const expGain = S.dropped.length * 2 + done.length * 4 + (score >= 70 ? 6 : 0);
+  const runs = store.get(KEY_RUNS, {});
+  const prevRuns = runs[S.scene.id] || 0;
+  runs[S.scene.id] = prevRuns + 1;
+  store.set(KEY_RUNS, runs);
+  const hist = store.get(KEY_HIST, {});
+  hist[S.scene.id] = (hist[S.scene.id] || []).concat([Math.round(S.base)]);
+  store.set(KEY_HIST, hist);
+  store.set(KEY_EXP, store.get(KEY_EXP, 0) + expGain);
+  const best = store.get(KEY_BEST, 0);
+  if (score > best) store.set(KEY_BEST, score);
+  S.result = { done: done, score: score, rate: rate, expGain: expGain, prevBest: best, runNo: prevRuns + 1 };
+  renderSummary();
+  showScreen('sSummary');
+}
+
+function renderSummary() {
+  const r = S.result;
+  const after = Math.round(S.peak * 0.52);
+  const usedNames = Array.from(S.used).map(itemName);
+  const droppedNames = S.dropped.map(itemName);
+  const bars = [
+    { lab: '出门前的预估', v: S.predicted, c: '#e8a44a' },
+    { lab: '当场的峰值', v: Math.round(S.peak), c: '#e2574d' },
+    { lab: '现在回头看', v: after, c: '#7fb6a8' }
+  ];
+  let html = '';
+  html += '<div class="ttl"><small>回家的路上</small>' + S.scene.name + '</div>';
+  html += '<div style="display:flex;align-items:baseline;gap:22px;margin:26px 0 6px;flex-wrap:wrap">'
+    + '<div class="rate">' + r.rate + '</div>'
+    + '<div style="font-size:13.5px;color:var(--ink-dim);line-height:1.9">'
+    + '这一场得分 <b style="color:var(--ink);font-weight:400">' + r.score + '</b>'
+    + '　（之前最好 ' + r.prevBest + '）<br>'
+    + '这是你第 <b style="color:var(--ink);font-weight:400">' + r.runNo + '</b> 次去这个场合，'
+    + '进门时的焦虑是 <b style="color:var(--ink);font-weight:400">' + Math.round(S.base) + '</b>。'
+    + '</div></div>';
+  html += '<div class="judge">' + closingText() + '</div>';
+  html += '<div class="kicker">同一件事，三个不同的数字</div>';
+  bars.forEach(function (b) {
+    html += '<div class="barRow"><span>' + b.lab + '</span>'
+      + '<span class="barTrack"><span class="barFill" style="width:' + clamp(b.v, 0, 100) + '%;background:' + b.c + '"></span></span>'
+      + '<span class="barVal">' + b.v + '</span></div>';
+  });
+  html += '<div class="lede" style="font-size:14px;margin-top:10px">'
+    + '这三根柱子说的是同一件事。你在门口吓自己的那个版本，比真正发生的要大得多；'
+    + '而事情过去之后，它还会再缩一点。这不是安慰，这是很多人反复观察到的规律。</div>';
+  html += '<div class="rule"></div>';
+  html += '<div class="kicker">今晚的焦虑曲线</div>';
+  html += summaryCurve();
+  html += '<div class="rule"></div>';
+  html += '<div class="kicker">目标</div><div class="logList">';
+  S.goals.forEach(function (g) {
+    const ok = r.done.indexOf(g) >= 0;
+    html += (ok ? '<b>✓</b> ' : '<s>✗</s> ') + g.text + '<br>';
+  });
+  html += '</div>';
+  html += '<div class="kicker">用过的退路</div><div class="logList">'
+    + (usedNames.length ? usedNames.map(function (n) { return '· ' + n; }).join('<br>') : '一件也没用。')
+    + '</div>';
+  html += '<div class="kicker">放进门口箱子的</div><div class="logList">'
+    + (droppedNames.length ? droppedNames.map(function (n) { return '· ' + n; }).join('<br>') : '一件也没放下。')
+    + '</div>';
+  html += '<div class="statGrid" style="margin-top:26px">'
+    + '<div class="stat"><b>' + r.done.length + '/3</b><span>完成的目标</span></div>'
+    + '<div class="stat"><b>' + Math.round(S.conn) + '/' + S.connCap + '</b><span>真实连接值</span></div>'
+    + '<div class="stat"><b>' + Math.round(S.debt) + '</b><span>焦虑负债</span></div>'
+    + '<div class="stat"><b>' + S.dropped.length + '</b><span>放下件数</span></div>'
+    + '<div class="stat"><b>+' + r.expGain + '</b><span>练习经验</span></div></div>';
+  html += '<div class="rule"></div>';
+  html += '<div class="btnRow">'
+    + '<button class="btn" id="bAgain">再去一次同一个地方</button>'
+    + '<button class="btn ghost" id="bOther">换个场合</button>'
+    + '<button class="btn ghost" id="bGrow">练习记录</button></div>';
+  html += '<div class="disclaimer">这里没有「治愈」两个字。这样的一晚不会让你不怕了，'
+    + '但它会一点点把这件事的性质改掉：从「我做不到」，变成「我做过，而且我还在」。'
+    + '如果你想把这种练习挪到现实里，先找一个最小、最安全的场景，一次只放下一件东西，'
+    + '并且别在状态很糟的时候硬来。</div>';
+  $('#summaryIn').innerHTML = html;
+  $('#bAgain').addEventListener('click', function () { startSetup(S.scene.id); });
+  $('#bOther').addEventListener('click', function () { renderSelect(); showScreen('sSelect'); });
+  $('#bGrow').addEventListener('click', function () { renderGrowth(); showScreen('sGrowth'); });
+}
+
+/* ============================ 练习记录 ============================ */
+function spark(arr) {
+  if (!arr || arr.length < 2) return '<div style="font-size:11.5px;color:var(--ink-faint)">再去一次，这里就开始画线</div>';
+  const W = 240, H = 46;
+  const mx = Math.max.apply(null, arr), mn = Math.min.apply(null, arr);
+  const d = Math.max(1, mx - mn);
+  const pts = arr.map(function (v, i) {
+    return (i / (arr.length - 1) * W).toFixed(1) + ',' + (H - (v - mn) / d * (H - 8) - 4).toFixed(1);
+  });
+  const last = pts[pts.length - 1].split(',');
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:46px" role="img" aria-label="进门焦虑的变化">'
+    + '<polyline points="' + pts.join(' ') + '" fill="none" stroke="#7fb6a8" stroke-width="1.8"/>'
+    + '<circle cx="' + last[0] + '" cy="' + last[1] + '" r="3.2" fill="#e8a44a"/></svg>';
+}
+
+function renderGrowth() {
+  const runs = store.get(KEY_RUNS, {});
+  const hist = store.get(KEY_HIST, {});
+  const es = expState();
+  const best = store.get(KEY_BEST, 0);
+  const total = SCENES.reduce(function (a, sc) { return a + (runs[sc.id] || 0); }, 0);
+  let html = '<div class="ttl"><small>练习记录</small>去过的地方</div>';
+  html += '<div class="statGrid" style="margin:26px 0 10px">'
+    + '<div class="stat"><b>' + total + '</b><span>总共去过</span></div>'
+    + '<div class="stat"><b>' + es.level + '</b><span>恐惧阈值 · 等级</span></div>'
+    + '<div class="stat"><b>' + best + '</b><span>历史最好一场</span></div>'
+    + '<div class="stat"><b>' + es.pct + '%</b><span>下一级进度</span></div></div>';
+  html += '<div class="lede" style="font-size:14px;margin:6px 0 0">'
+    + '等级只由两件事累积：你放下过多少东西，你完成过多少目标。它不测你的焦虑，也不评价你的性格。</div>';
+  html += '<div class="kicker">每个场合，进门时的焦虑</div><div class="sceneHist">';
+  SCENES.forEach(function (sc) {
+    const n = runs[sc.id] || 0;
+    const h = hist[sc.id] || [];
+    html += '<div class="histCard"><h4>' + sc.name + '</h4>'
+      + '<div class="meta">去过 ' + n + ' 次'
+      + (h.length ? '　最近一次进门焦虑 ' + h[h.length - 1] + (h.length > 1 ? '（第一次 ' + h[0] + '）' : '') : '')
+      + '</div>' + spark(h) + '</div>';
+  });
+  html += '</div>';
+  html += '<div class="rule"></div><div class="btnRow">'
+    + '<button class="btn" id="bGo">再出门一次</button>'
+    + '<button class="btn ghost" id="bHome">回到开头</button>'
+    + '<button class="btn ghost" id="bReset">清空记录</button></div>';
+  $('#growthIn').innerHTML = html;
+  $('#bGo').addEventListener('click', function () { renderSelect(); showScreen('sSelect'); });
+  $('#bHome').addEventListener('click', function () { showScreen('sTitle'); });
+  $('#bReset').addEventListener('click', function () {
+    store.set(KEY_RUNS, {}); store.set(KEY_HIST, {}); store.set(KEY_EXP, 0); store.set(KEY_BEST, 0);
+    renderGrowth();
+  });
+}
+
+/* ============================ 可选：接真 AI ============================
+   把 CONFIG.llm 填好并改为 enabled:true，就能让大模型现场写场景、写台词、
+   写回家路上的那段话。连不上会自动退回内置的生成器，游戏不会中断。
+   下面这个函数是留给你的接口，默认不调用。 */
+async function llmText(prompt) {
+  const res = await fetch(CONFIG.llm.endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + CONFIG.llm.apiKey },
+    body: JSON.stringify({
+      model: CONFIG.llm.model,
+      temperature: 1,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  const j = await res.json();
+  return (j.choices && j.choices[0] && j.choices[0].message) ? j.choices[0].message.content.trim() : '';
+}
+
+/* ============================ 启动 ============================ */
+function init() {
+  $('#art').innerHTML = titleArt();
+  $('#btnStart').addEventListener('click', function () { renderSelect(); showScreen('sSelect'); });
+  $('#btnGrowth0').addEventListener('click', function () { renderGrowth(); showScreen('sGrowth'); });
+  $('#btnGrowth1').addEventListener('click', function () { renderGrowth(); showScreen('sGrowth'); });
+  $('#predSlider').addEventListener('input', function () {
+    SETUP.pred = +$('#predSlider').value;
+    $('#predVal').textContent = SETUP.pred;
+  });
+  $('#btnGo').addEventListener('click', beginSession);
+  window.addEventListener('keydown', function (e) {
+    if (!S || S.mode !== 'node') return;
+    const n = parseInt(e.key, 10);
+    if (n >= 1) {
+      const els = $$('#opts .opt');
+      if (els[n - 1] && !els[n - 1].disabled) els[n - 1].click();
+    }
+  });
+  showScreen('sTitle');
+  requestAnimationFrame(tick);
+}
+
+/* 自检：在地址后面加 ?selftest=30，会自动跑 30 场并打印结果 */
+function selftest(n) {
+  const lines = [];
+  let crash = 0;
+  let locks = 0, waitedPeaks = 0;
+  for (let k = 0; k < n; k++) {
+    try {
+      const sc = pick(SCENES);
+      startSetup(sc.id);
+      SETUP.dropped = someOf(SETUP.pack.map(function (i) { return i.id; }), rint(0, 6));
+      SETUP.chosen = someOf(GOALS, 3).map(function (g) { return g.id; });
+      beginSession();
+      let guard = 0;
+      while (S.mode !== 'over' && guard++ < 400) {
+        if (S.mode === 'node') {
+          const waitSteps = rint(0, 320);
+          for (let i = 0; i < waitSteps; i++) advanceAnx(0.05);
+          if (isLocked()) locks++;
+          const av = S.bag.filter(function (b) { return b.left > 0; });
+          const roll = Math.random();
+          if (isLocked() || (roll < 0.42 && av.length)) {
+            if (av.length) choose('safety', pick(av).item.id);
+            else choose('neutral');
+          } else if (roll < 0.6) choose('neutral');
+          else choose('expo');
+          if (S.waitedTrough) waitedPeaks++;
+        } else if (S.mode === 'resolve') nextNode();
+        else break;
+      }
+      lines.push('#' + k + ' ' + sc.id + ' nodes=' + S.at + ' score=' + S.result.score
+        + ' rate=' + S.result.rate + ' goals=' + S.result.done.length + ' peak=' + Math.round(S.peak)
+        + ' debt=' + Math.round(S.debt) + ' conn=' + Math.round(S.conn) + '/' + S.connCap
+        + ' curve=' + S.curve.length);
+    } catch (e) { crash++; lines.push('#' + k + ' CRASH ' + e.message); }
+  }
+  try { renderSelect(); renderGrowth(); } catch (e) { crash++; lines.push('CRASH screen: ' + e.message); }
+  lines.push('--- 完成 ' + n + ' 场，异常 ' + crash + ' 次，卡在封锁 ' + locks
+    + ' 次，撑过峰值 ' + waitedPeaks + ' 次');
+  return lines.join('\n');
+}
+
+/* 演示模式：在地址后面加 ?demo=wedding，会自动开一局并推进几步，用来截屏检查画面 */
+function demo() {
+  init();
+  const m = (location.search.match(/demo=([a-z]+)/) || [])[1] || 'birthday';
+  startSetup(SCENES.filter(function (s) { return s.id === m; })[0] ? m : 'birthday');
+  SETUP.dropped = SETUP.pack.slice(0, 3).map(function (i) { return i.id; });
+  SETUP.chosen = someOf(GOALS, 3).map(function (g) { return g.id; });
+  beginSession();
+  const steps = rint(4, 7);
+  for (let k = 0; k < steps; k++) {
+    for (let i = 0; i < rint(60, 420); i++) advanceAnx(0.05);
+    if (S.mode === 'node') {
+      const av = S.bag.filter(function (b) { return b.left > 0; });
+      if (isLocked()) choose(av.length ? 'safety' : 'neutral', av.length ? pick(av).item.id : null);
+      else if (Math.random() < 0.4 && av.length) choose('safety', pick(av).item.id);
+      else if (Math.random() < 0.5) choose('neutral');
+      else choose('expo');
+    }
+    if (S.mode === 'resolve' && k < steps - 1) nextNode();
+  }
+  for (let i = 0; i < 260; i++) advanceAnx(0.05);
+  paint();
+  syncNode();
+  if (/[?&]end=/.test(QS)) endSession();
+}
+
+const QS = location.search;
+if (/[?&]selftest=/.test(QS)) {
+  window.addEventListener('load', function () {
+    const n = parseInt((QS.match(/selftest=(\d+)/) || [])[1] || '20', 10);
+    const pre = $('#selftest');
+    pre.style.display = 'block';
+    pre.textContent = selftest(n);
+  });
+} else if (/[?&]demo=/.test(QS)) {
+  window.addEventListener('load', demo);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
+</script>
